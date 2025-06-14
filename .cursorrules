@@ -1,0 +1,47 @@
+# Órbita - Inertia-style SPA Adapter 🛸
+
+You are working on **Órbita**, the frontend adapter that provides Inertia.js-style SPA functionality.
+
+## Package Purpose
+Órbita bridges server-side Lua controllers with client-side Preact components using Inertia.js patterns.
+
+## Key Responsibilities
+- Client-side routing and page transitions
+- AJAX request handling with proper headers
+- History management (back/forward buttons)
+- Form submission handling
+- Progress indicators and loading states
+- Error handling and validation display
+
+## Core APIs (JavaScript)
+- `Orbita.createApp(el, resolve)` - Initialize SPA
+- `Orbita.visit(url, options)` - Navigate to page
+- `Orbita.post(url, data)` - Submit form data
+- `Orbita.reload(options)` - Reload current page
+
+## Client Integration
+```javascript
+import { Orbita } from '@foguete/orbita'
+import { render } from 'preact'
+
+Orbita.createApp(document.getElementById('app'), (name) => {
+    const pages = import.meta.glob('./Pages/**/*.jsx')
+    return pages[`./Pages/${name}.jsx`]().then(module => module.default)
+})
+```
+
+## Server Integration (Lua)
+```lua
+function UsersController:show()
+    local user = User:find(self.params.id)
+    return self:render_inertia("Users/Show", { user = user })
+end
+```
+
+## Coding Guidelines
+- Follow Inertia.js API conventions
+- Handle loading states gracefully
+- Implement proper error boundaries
+- Support form validation display
+- Maintain browser history correctly
+- Optimize for SPA performance 
