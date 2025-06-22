@@ -1,4 +1,4 @@
-import { render } from 'preact';
+import { render, h } from 'preact';
 import { useState, useEffect } from 'preact/hooks';
 import { OrbitaConfig, OrbitaPage } from './types';
 import { router } from './router';
@@ -64,15 +64,15 @@ export function createOrbitaApp(element: Element, config: OrbitaConfig) {
     }, []);
 
     if (loading && !component) {
-      return config.swapComponent ? <config.swapComponent /> : <div>Loading...</div>;
+      return config.swapComponent ? h(config.swapComponent, {}) : h('div', {}, 'Loading...');
     }
 
     if (!component) {
-      return <div>Component not found: {page.component}</div>;
+      return h('div', {}, `Component not found: ${page.component}`);
     }
 
-    return (
-      <OrbitaContext.Provider value={{
+    return h(OrbitaContext.Provider, {
+      value: {
         page,
         visit: router.visit.bind(router),
         reload: router.reload.bind(router),
@@ -80,11 +80,9 @@ export function createOrbitaApp(element: Element, config: OrbitaConfig) {
         put: router.put.bind(router),
         patch: router.patch.bind(router),
         delete: router.delete.bind(router)
-      }}>
-        <component {...page.props} />
-      </OrbitaContext.Provider>
-    );
+      }
+    }, h(component, page.props));
   }
 
-  render(<App />, element);
+  render(h(App, {}), element);
 }

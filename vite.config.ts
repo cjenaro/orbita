@@ -8,7 +8,8 @@ export default defineConfig({
     preact(),
     dts({
       insertTypesEntry: true,
-      exclude: ['**/*.test.*', '**/*.spec.*']
+      exclude: ['**/*.test.*', '**/*.spec.*'],
+      outDir: 'dist'
     })
   ],
   build: {
@@ -29,7 +30,8 @@ export default defineConfig({
       }
     },
     sourcemap: true,
-    minify: 'esbuild'
+    minify: false,
+    outDir: 'dist'
   },
   test: {
     environment: 'jsdom',
