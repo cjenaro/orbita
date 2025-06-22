@@ -19,8 +19,11 @@ function response.json(page_data)
 end
 
 -- Generate HTML response for initial page loads
-function response.html(page_data, template)
+function response.html(page_data, template, config)
 	template = template or "app"
+	config = config or {}
+	local app_js_path = config.app_js_path or "/js/app.js"
+	
 	local html_template = string.format(
 		[[
 <!DOCTYPE html>
@@ -35,13 +38,14 @@ function response.html(page_data, template)
 </head>
 <body>
     <div id="app" data-page='%s'></div>
-    <script src="/js/app.js"></script>
+    <script type="module" src="%s"></script>
 </body>
 </html>
     ]],
 		page_data.props.title or "Foguete App",
 		json.encode(page_data),
-		json.encode(page_data):gsub("'", "\\'")
+		json.encode(page_data):gsub("'", "\\'"),
+		app_js_path
 	)
 
 	return {

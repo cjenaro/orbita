@@ -14,6 +14,7 @@ local DEFAULT_CONFIG = {
 	asset_version = nil,
 	ssr = false,
 	ssr_url = nil,
+	app_js_path = "/js/app.js",  -- Default path for the main JS file
 }
 
 -- Global configuration
@@ -73,7 +74,7 @@ function orbita.render(component, props, request)
 		return response.json(page_data)
 	else
 		-- Return HTML response with embedded page data for initial page load
-		return response.html(page_data, config.root_template)
+		return response.html(page_data, config.root_template, config)
 	end
 end
 
