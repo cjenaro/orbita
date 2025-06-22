@@ -1,15 +1,16 @@
-# Órbita - SPA Frontend Adapter 🛸
+# 🛸 Orbita - Foguete SPA Adapter
 
-Órbita is the client-side adapter that provides [Inertia.js](https://reinink.ca/articles/introducing-inertia-js)-style SPA functionality, bridging Lua backend with Preact frontend.
+Seamless Preact frontend integration for Foguete framework, inspired by Inertia.js patterns.
 
 ## Features
 
-- **SPA Experience** - No page reloads, smooth transitions
-- **Server-Driven** - Backend controls routing and data
-- **Preact Integration** - Built for Preact components
-- **Form Handling** - Automatic form submission and validation
-- **History Management** - Proper browser back/forward support
-- **Progress Indicators** - Loading states and feedback
+- 🚀 **SPA Navigation** - No full page reloads
+- 🔄 **Server-Side Rendering** - Initial page load with embedded data
+- 📝 **Form Handling** - POST requests with validation
+- 💬 **Flash Messages** - Success/error notifications
+- 🕰️ **History Management** - Browser back/forward support
+- 🔒 **TypeScript Support** - Full type safety
+- ⚡ **Vite Powered** - Fast development and building
 
 ## Installation
 
@@ -19,91 +20,177 @@ npm install @foguete/orbita preact
 
 ## Quick Start
 
-### Client Setup
-```javascript
-// src/app.js
-import { Orbita } from '@foguete/orbita'
-import { render } from 'preact'
+### 1. Initialize Orbita App
 
-Orbita.createApp(document.getElementById('app'), (name) => {
-    const pages = import.meta.glob('./Pages/**/*.jsx')
-    return pages[`./Pages/${name}.jsx`]().then(module => module.default)
-})
+```tsx
+// main.tsx
+import { createOrbitaApp } from '@foguete/orbita';
+
+const pages = {
+  'Home/Index': () => import('./pages/Home/Index'),
+  'Users/Show': () => import('./pages/Users/Show')
+};
+
+async function resolveComponent(name: string) {
+  const page = pages[name as keyof typeof pages];
+  const module = await page();
+  return module.default;
+}
+
+createOrbitaApp(document.getElementById('app')!, {
+  resolveComponent
+});
 ```
 
-### Server Integration
+### 2. Create Preact Components
+
+```tsx
+// pages/Home/Index.tsx
+import { OrbitaLink, OrbitaHead } from '@foguete/orbita';
+
+interface HomeProps {
+  title: string;
+  users: User[];
+}
+
+export default function Home({ title, users }: HomeProps) {
+  return (
+    <>
+      <OrbitaHead title={title} />
+      <h1>{title}</h1>
+      <OrbitaLink href="/users">View Users</OrbitaLink>
+    </>
+  );
+}
+```
+
+### 3. Lua Backend Integration
+
 ```lua
--- In your controller
-function UsersController:show()
-    local user = User:find(self.params.id)
-    return self:render_inertia("Users/Show", { user = user })
+-- Extend BaseController with Orbita
+local BaseController = require("comando")
+local orbita = require("orbita")
+BaseController = orbita.extend_controller(BaseController)
+
+-- Controller action
+function HomeController:index()
+    return self:render_orbita("Home/Index", {
+        title = "Welcome",
+        users = User:all()
+    })
 end
 ```
 
-## Navigation
+## API Reference
 
-### Programmatic Navigation
-```javascript
-import { Orbita } from '@foguete/orbita'
+### Components
 
-// Simple visit
-Orbita.visit('/users/123')
-
-// With options
-Orbita.visit('/users', {
-    method: 'post',
-    data: { name: 'John', email: 'john@example.com' }
-})
+#### `OrbitaLink`
+```tsx
+<OrbitaLink 
+  href="/users" 
+  method="post"
+  data={{ name: "John" }}
+  preserveState={true}
+>
+  Create User
+</OrbitaLink>
 ```
 
-### Links
-```jsx
-import { Link } from '@foguete/orbita'
+#### `OrbitaHead`
+```tsx
+<OrbitaHead title="Page Title" />
+```
 
-function UsersList({ users }) {
-    return (
-        <div>
-            {users.map(user => (
-                <Link href={`/users/${user.id}`} key={user.id}>
-                    {user.name}
-                </Link>
-            ))}
-        </div>
-    )
+### Hooks
+
+#### `useOrbita()`
+```tsx
+import { useOrbita } from '@foguete/orbita';
+
+function MyComponent() {
+  const { page, visit, post } = useOrbita();
+  
+  const handleSubmit = () => {
+    post('/users', { name: 'John' });
+  };
+  
+  return <div>Current page: {page.component}</div>;
 }
 ```
 
-## Forms
+### Router Methods
 
-### Form Component
-```jsx
-import { useForm } from '@foguete/orbita'
+```tsx
+import { router } from '@foguete/orbita';
 
-function CreateUser() {
-    const { data, setData, post, processing, errors } = useForm({
-        name: '',
-        email: ''
-    })
+// Navigate to page
+router.visit('/users');
 
-    const submit = (e) => {
-        e.preventDefault()
-        post('/users')
-    }
+// POST request
+router.post('/users', { name: 'John' });
 
-    return (
-        <form onSubmit={submit}>
-            <input
-                value={data.name}
-                onChange={e => setData('name', e.target.value)}
-            />
-            {errors.name && <div>{errors.name}</div>}
-            
-            <button type="submit" disabled={processing}>
-                Create User
-            </button>
-        </form>
-    )
-}
+// Other HTTP methods
+router.put('/users/1', userData);
+router.patch('/users/1', partialData);
+router.delete('/users/1');
+router.reload();
 ```
 
-This SPA approach, as discussed in modern web development patterns, provides the best of both server-side simplicity and client-side UX.
+## Development
+
+### Build the Package
+
+```bash
+npm run build
+```
+
+### Run Tests
+
+```bash
+npm test
+npm run test:watch
+npm run test:ui
+```
+
+### Development Mode
+
+```bash
+npm run dev
+```
+
+### Type Checking
+
+```bash
+npm run typecheck
+```
+
+## Configuration
+
+### Vite Config
+
+The package uses Vite for building with the following features:
+
+- **Library Mode** - Builds as both ESM and CommonJS
+- **TypeScript** - Full type generation with `vite-plugin-dts`
+- **Preact Preset** - Optimized for Preact development
+- **Testing** - Vitest with jsdom environment
+
+### TypeScript Config
+
+- **Modern Target** - ES2020 with bundler module resolution
+- **JSX** - Preact JSX transform
+- **Strict Mode** - Full TypeScript strict checking
+- **Declaration Maps** - For better debugging
+
+## Integration with Foguete
+
+Orbita seamlessly integrates with other Foguete components:
+
+- **Motor** - HTTP server handles both HTML and JSON responses
+- **Rota** - Routes work with both traditional and SPA navigation
+- **Comando** - Controllers use `render_orbita()` for SPA responses
+
+## License
+
+MIT
