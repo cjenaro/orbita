@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { OrbitaPage, OrbitaVisitOptions, OrbitaResponse } from './types';
 
 class OrbitaRouter {
@@ -106,20 +105,48 @@ class OrbitaRouter {
   }
 
   private async makeRequest(url: string, config: any) {
-    const axiosConfig: any = {
-      url,
-      method: config.method,
+    const fetchConfig: RequestInit = {
+      method: config.method.toUpperCase(),
       headers: config.headers,
-      onUploadProgress: config.onUploadProgress
     };
 
-    if (config.method === 'get') {
-      axiosConfig.params = config.data;
-    } else {
-      axiosConfig.data = config.data;
+    let requestUrl = url;
+
+    if (config.method === 'get' && config.data && Object.keys(config.data).length > 0) {
+      // For GET requests, append data as query parameters
+      const params = new URLSearchParams(config.data);
+      requestUrl += (url.includes('?') ? '&' : '?') + params.toString();
+    } else if (config.data && Object.keys(config.data).length > 0) {
+      // For other methods, send data in body
+      if (config.data instanceof FormData) {
+        fetchConfig.body = config.data;
+      } else {
+        fetchConfig.headers = {
+          ...fetchConfig.headers,
+          'Content-Type': 'application/json',
+        };
+        fetchConfig.body = JSON.stringify(config.data);
+      }
     }
 
-    return axios(axiosConfig);
+    const response = await fetch(requestUrl, fetchConfig);
+    
+    if (!response.ok) {
+      const error = new Error(`HTTP error! status: ${response.status}`) as any;
+      error.response = {
+        status: response.status,
+        data: response.headers.get('content-type')?.includes('application/json') 
+          ? await response.json() 
+          : await response.text()
+      };
+      throw error;
+    }
+
+    return {
+      data: response.headers.get('content-type')?.includes('application/json') 
+        ? await response.json() 
+        : await response.text()
+    };
   }
 }
 

@@ -18,19 +18,17 @@ export function createOrbitaApp(element: Element, config: OrbitaConfig) {
 
     // Load initial component
     useEffect(() => {
-      loadComponent(page.component);
+      loadComponent(page.component, page);
     }, []);
 
-    // Handle page changes
-    useEffect(() => {
-      loadComponent(page.component);
-    }, [page.component]);
-
-    async function loadComponent(componentName: string) {
+    async function loadComponent(componentName: string, pageData: OrbitaPage) {
       try {
         setLoading(true);
         const Component = await config.resolveComponent(componentName);
+        
+        // Only update component and page together to prevent prop/component mismatch
         setComponent(() => Component);
+        setPage(pageData);
       } catch (error) {
         console.error('Failed to load component:', componentName, error);
       } finally {
@@ -39,7 +37,8 @@ export function createOrbitaApp(element: Element, config: OrbitaConfig) {
     }
 
     function handlePageChange(newPage: OrbitaPage) {
-      setPage(newPage);
+      // Don't update page state immediately - wait for component to load
+      loadComponent(newPage.component, newPage);
       
       // Update browser history
       if (newPage.url !== window.location.pathname + window.location.search) {
@@ -63,12 +62,8 @@ export function createOrbitaApp(element: Element, config: OrbitaConfig) {
       return () => window.removeEventListener('popstate', handlePopState);
     }, []);
 
-    if (loading && !component) {
-      return config.swapComponent ? h(config.swapComponent, {}) : h('div', {}, 'Loading...');
-    }
-
     if (!component) {
-      return h('div', {}, `Component not found: ${page.component}`);
+      return config.swapComponent ? h(config.swapComponent, {}) : h('div', {}, 'Loading...');
     }
 
     return h(OrbitaContext.Provider, {

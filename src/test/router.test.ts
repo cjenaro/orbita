@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { router } from '../router';
 
-// Mock axios
-vi.mock('axios', () => ({
-  default: vi.fn(() => Promise.resolve({ data: { component: 'Test', props: {}, url: '/test' } }))
-}));
+// Mock fetch
+global.fetch = vi.fn(() => 
+  Promise.resolve({
+    ok: true,
+    headers: {
+      get: (name: string) => name === 'content-type' ? 'application/json' : null
+    },
+    json: () => Promise.resolve({ component: 'Test', props: {}, url: '/test' })
+  } as Response)
+);
 
 describe('OrbitaRouter', () => {
   beforeEach(() => {

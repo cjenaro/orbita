@@ -20,12 +20,11 @@ export default defineConfig({
       fileName: (format) => `index.${format === 'es' ? 'js' : 'cjs'}`
     },
     rollupOptions: {
-      external: ['preact', 'preact/hooks', 'axios'],
+      external: ['preact', 'preact/hooks'],
       output: {
         globals: {
           preact: 'preact',
-          'preact/hooks': 'preactHooks',
-          axios: 'axios'
+          'preact/hooks': 'preactHooks'
         }
       }
     },
