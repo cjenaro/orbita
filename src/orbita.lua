@@ -42,20 +42,73 @@ function orbita.is_orbita_request(request)
 	return headers["X-Orbita"] == "true" or headers["x-orbita"] == "true"
 end
 
+-- Serialize Carga model to plain table
+local function serialize_carga_model(model)
+	if not model._attributes then
+		return model
+	end
+	
+	local serialized = {}
+	
+	-- Copy all attributes from _attributes
+	for key, value in pairs(model._attributes) do
+		serialized[key] = value
+	end
+	
+	-- Add some useful metadata
+	serialized._persisted = model._persisted
+	
+	return serialized
+end
+
+-- Check if a table is a Carga model
+local function is_carga_model(obj)
+	return type(obj) == "table" and obj._attributes and obj._model_class
+end
+
 -- Process lazy props before sending to frontend
-local function process_lazy_props(props)
+local function process_lazy_props(props, visited, depth)
+	visited = visited or {}
+	depth = depth or 0
+	
+	-- Prevent infinite recursion and stack overflow
+	if depth > 10 then
+		return props
+	end
+	
+	-- Check for circular references
+	if visited[props] then
+		return "[Circular Reference]"
+	end
+	
+	-- Mark this table as visited
+	visited[props] = true
+	
 	local processed = {}
 	for key, value in pairs(props) do
 		if type(value) == "table" and value.__orbita_lazy then
 			-- Execute lazy callback
 			processed[key] = value.callback()
 		elseif type(value) == "table" then
-			-- Recursively process nested tables
-			processed[key] = process_lazy_props(value)
+			-- Handle Carga models specially
+			if is_carga_model(value) then
+				processed[key] = serialize_carga_model(value)
+			-- Skip certain internal/meta tables that might cause issues
+			elseif type(key) == "string" and (key:match("^_") or key == "class" or key == "__index") then
+				-- Skip internal properties for non-Carga objects
+				processed[key] = "[Internal Property]"
+			else
+				-- Recursively process nested tables with depth tracking
+				processed[key] = process_lazy_props(value, visited, depth + 1)
+			end
 		else
 			processed[key] = value
 		end
 	end
+	
+	-- Unmark this table to allow it to be processed again in different contexts
+	visited[props] = nil
+	
 	return processed
 end
 
