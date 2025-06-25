@@ -71,9 +71,11 @@ export function createOrbitaApp(element: Element, config: OrbitaConfig) {
 
     if (!Component) {
       console.log("!COMPONENT");
-      return config.swapComponent
-        ? h(config.swapComponent, {})
-        : h("div", {}, "Loading...");
+      return config.swapComponent ? (
+        <config.swapComponent />
+      ) : (
+        <div>Loading!</div>
+      );
     }
 
     console.log("!PROVIDER");
