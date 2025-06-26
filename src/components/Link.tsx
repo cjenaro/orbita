@@ -1,14 +1,15 @@
-import { ComponentChildren } from 'preact';
-import { useOrbita } from '../hooks/useOrbita';
-import { OrbitaVisitOptions } from '../types';
+import { ComponentChildren } from "preact";
+import { useOrbita } from "../hooks/useOrbita";
+import { OrbitaVisitOptions } from "../types";
 
 interface OrbitaLinkProps {
   href: string;
-  method?: 'get' | 'post' | 'put' | 'patch' | 'delete';
+  method?: "get" | "post" | "put" | "patch" | "delete";
   data?: Record<string, any>;
   replace?: boolean;
   preserveState?: boolean;
   preserveScroll?: boolean;
+  preserveUrl?: boolean;
   only?: string[];
   headers?: Record<string, string>;
   className?: string;
@@ -18,11 +19,12 @@ interface OrbitaLinkProps {
 
 export function OrbitaLink({
   href,
-  method = 'get',
+  method = "get",
   data = {},
   replace = false,
   preserveState = false,
   preserveScroll = false,
+  preserveUrl = false,
   only = [],
   headers = {},
   className,
@@ -60,20 +62,17 @@ export function OrbitaLink({
       preserveState,
       preserveScroll,
       only,
-      headers
+      preserveUrl,
+      headers,
     };
 
     visit(href, options);
   }
 
   return (
-    <a
-      href={href}
-      className={className}
-      onClick={handleClick}
-      {...props}
-    >
+    <a href={href} className={className} onClick={handleClick} {...props}>
       {children}
     </a>
   );
 }
+
