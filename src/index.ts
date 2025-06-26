@@ -2,7 +2,7 @@
 // Inspired by Inertia.js but tailored for Lua backends
 
 export { createOrbitaApp } from "./app";
-export { OrbitaLink } from "./components/Link";
+export { OrbitaLink, OrbitaLink as Link } from "./components/Link";
 export { OrbitaHead } from "./components/Head";
 export { useOrbita } from "./hooks/useOrbita";
 export { router } from "./router";
