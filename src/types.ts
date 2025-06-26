@@ -32,6 +32,7 @@ export interface OrbitaVisitOptions {
   replace?: boolean;
   preserveState?: boolean;
   preserveScroll?: boolean;
+  preserveUrl?: boolean;
   only?: string[];
   headers?: Record<string, string>;
   errorBag?: string;
@@ -42,6 +43,13 @@ export interface OrbitaVisitOptions {
   onSuccess?: (page: OrbitaPage) => void;
   onError?: (errors: Record<string, string>) => void;
   onFinish?: () => void;
+}
+
+export interface OrbitaRequestConfig {
+  method: string;
+  data?: Record<string, any> | FormData;
+  headers?: Record<string, string>;
+  onUploadProgress?: (progress: number) => void;
 }
 
 export interface OrbitaContext {

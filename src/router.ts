@@ -1,4 +1,9 @@
-import { OrbitaPage, OrbitaVisitOptions, OrbitaResponse } from './types';
+import {
+  OrbitaPage,
+  OrbitaVisitOptions,
+  OrbitaResponse,
+  OrbitaRequestConfig,
+} from "./types";
 
 class OrbitaRouter {
   private pageHandler: ((page: OrbitaPage) => void) | null = null;
@@ -15,11 +20,11 @@ class OrbitaRouter {
     }
 
     const {
-      method = 'get',
+      method = "get",
       data = {},
-      replace = false,
       preserveState = false,
       preserveScroll = false,
+      preserveUrl = true,
       only = [],
       headers = {},
       onBefore,
@@ -27,7 +32,7 @@ class OrbitaRouter {
       onProgress,
       onSuccess,
       onError,
-      onFinish
+      onFinish,
     } = options;
 
     // Call onBefore callback
@@ -43,36 +48,37 @@ class OrbitaRouter {
         method,
         data,
         headers: {
-          'X-Orbita': 'true',
-          'X-Requested-With': 'XMLHttpRequest',
+          "X-Orbita": "true",
+          "X-Requested-With": "XMLHttpRequest",
           ...headers,
-          ...(only.length > 0 && { 'X-Orbita-Partial-Component': only.join(',') }),
-          ...(preserveState && { 'X-Orbita-Preserve-State': 'true' }),
-          ...(preserveScroll && { 'X-Orbita-Preserve-Scroll': 'true' })
+          ...(only.length > 0 && {
+            "X-Orbita-Partial-Component": only.join(","),
+          }),
+          ...(preserveState && { "X-Orbita-Preserve-State": "true" }),
+          ...(preserveScroll && { "X-Orbita-Preserve-Scroll": "true" }),
         },
-        onUploadProgress: onProgress
+        onUploadProgress: onProgress,
       });
 
       const response = await this.pendingVisit;
       const page: OrbitaPage = response.data;
 
-      // Update page
-      if (this.pageHandler) {
+      // Update page only if not preserving URL
+      if (this.pageHandler && !preserveUrl) {
         this.pageHandler(page);
       }
 
       // Call onSuccess callback
       onSuccess?.(page);
-
     } catch (error: any) {
-      console.error('Orbita visit failed:', error);
-      
+      console.error("Orbita visit failed:", error);
+
       if (error.response?.status === 422) {
         // Validation errors
         onError?.(error.response.data.errors || {});
       } else {
         // Other errors - redirect to error page or show generic error
-        onError?.({ message: 'An error occurred' });
+        onError?.({ message: "An error occurred" });
       }
     } finally {
       this.pendingVisit = null;
@@ -80,31 +86,43 @@ class OrbitaRouter {
     }
   }
 
-  reload(options: Omit<OrbitaVisitOptions, 'method'> = {}) {
+  reload(options: Omit<OrbitaVisitOptions, "method"> = {}) {
     return this.visit(window.location.pathname + window.location.search, {
       ...options,
       preserveState: true,
-      preserveScroll: true
+      preserveScroll: true,
     });
   }
 
-  post(url: string, data: Record<string, any> = {}, options: Omit<OrbitaVisitOptions, 'method' | 'data'> = {}) {
-    return this.visit(url, { ...options, method: 'post', data });
+  post(
+    url: string,
+    data: Record<string, any> = {},
+    options: Omit<OrbitaVisitOptions, "method" | "data"> = {},
+  ) {
+    return this.visit(url, { ...options, method: "post", data });
   }
 
-  put(url: string, data: Record<string, any> = {}, options: Omit<OrbitaVisitOptions, 'method' | 'data'> = {}) {
-    return this.visit(url, { ...options, method: 'put', data });
+  put(
+    url: string,
+    data: Record<string, any> = {},
+    options: Omit<OrbitaVisitOptions, "method" | "data"> = {},
+  ) {
+    return this.visit(url, { ...options, method: "put", data });
   }
 
-  patch(url: string, data: Record<string, any> = {}, options: Omit<OrbitaVisitOptions, 'method' | 'data'> = {}) {
-    return this.visit(url, { ...options, method: 'patch', data });
+  patch(
+    url: string,
+    data: Record<string, any> = {},
+    options: Omit<OrbitaVisitOptions, "method" | "data"> = {},
+  ) {
+    return this.visit(url, { ...options, method: "patch", data });
   }
 
-  delete(url: string, options: Omit<OrbitaVisitOptions, 'method'> = {}) {
-    return this.visit(url, { ...options, method: 'delete' });
+  delete(url: string, options: Omit<OrbitaVisitOptions, "method"> = {}) {
+    return this.visit(url, { ...options, method: "delete" });
   }
 
-  private async makeRequest(url: string, config: any) {
+  private async makeRequest(url: string, config: OrbitaRequestConfig) {
     const fetchConfig: RequestInit = {
       method: config.method.toUpperCase(),
       headers: config.headers,
@@ -112,10 +130,14 @@ class OrbitaRouter {
 
     let requestUrl = url;
 
-    if (config.method === 'get' && config.data && Object.keys(config.data).length > 0) {
+    if (
+      config.method === "get" &&
+      config.data &&
+      Object.keys(config.data).length > 0
+    ) {
       // For GET requests, append data as query parameters
       const params = new URLSearchParams(config.data);
-      requestUrl += (url.includes('?') ? '&' : '?') + params.toString();
+      requestUrl += (url.includes("?") ? "&" : "?") + params.toString();
     } else if (config.data && Object.keys(config.data).length > 0) {
       // For other methods, send data in body
       if (config.data instanceof FormData) {
@@ -123,29 +145,29 @@ class OrbitaRouter {
       } else {
         fetchConfig.headers = {
           ...fetchConfig.headers,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         };
         fetchConfig.body = JSON.stringify(config.data);
       }
     }
 
     const response = await fetch(requestUrl, fetchConfig);
-    
+
     if (!response.ok) {
       const error = new Error(`HTTP error! status: ${response.status}`) as any;
       error.response = {
         status: response.status,
-        data: response.headers.get('content-type')?.includes('application/json') 
-          ? await response.json() 
-          : await response.text()
+        data: response.headers.get("content-type")?.includes("application/json")
+          ? await response.json()
+          : await response.text(),
       };
       throw error;
     }
 
     return {
-      data: response.headers.get('content-type')?.includes('application/json') 
-        ? await response.json() 
-        : await response.text()
+      data: response.headers.get("content-type")?.includes("application/json")
+        ? await response.json()
+        : await response.text(),
     };
   }
 }
