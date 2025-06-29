@@ -136,7 +136,7 @@ class OrbitaRouter {
       Object.keys(config.data).length > 0
     ) {
       // For GET requests, append data as query parameters
-      const params = new URLSearchParams(config.data);
+      const params = new URLSearchParams(config.data as Record<string, string>);
       requestUrl += (url.includes("?") ? "&" : "?") + params.toString();
     } else if (config.data && Object.keys(config.data).length > 0) {
       // For other methods, send data in body
